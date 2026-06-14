@@ -64,3 +64,4 @@ export const occasionsCategories: CategoryItem[] = [
   { label: "Festive Wear Sarees", href: "/products?occasion=festive" },
   { label: "Wedding Sarees", href: "/products?occasion=wedding" },
 ];
+//fixing the deployment
