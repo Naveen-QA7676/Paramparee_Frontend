@@ -141,6 +141,11 @@ const Checkout = () => {
           contact: selectedAddr.mobile,
         },
         theme: { color: "#C5A059" },
+        modal: {
+          ondismiss: () => {
+            toast({ title: "Payment Cancelled", description: "You closed the payment window. Your order was not placed." });
+          },
+        },
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -365,7 +370,7 @@ const Checkout = () => {
                 <CreditCard className="h-5 w-5 text-gold" />Payment Method
               </h2>
               <div className="grid gap-4">
-                {/* <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === "Online" ? "border-gold bg-gold/5" : "border-border hover:border-gold/50"}`}>
+                <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === "Online" ? "border-gold bg-gold/5" : "border-border hover:border-gold/50"}`}>
                   <input type="radio" name="payment" checked={paymentMethod === "Online"} onChange={() => setPaymentMethod("Online")} className="w-4 h-4 accent-gold" />
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center text-gold">
@@ -376,7 +381,7 @@ const Checkout = () => {
                       <p className="text-xs text-muted-foreground">Razorpay (Cards, UPI, Netbanking)</p>
                     </div>
                   </div>
-                </label> */}
+                </label>
                 <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === "COD" ? "border-gold bg-gold/5" : "border-border hover:border-gold/50"}`}>
                   <input type="radio" name="payment" checked={paymentMethod === "COD"} onChange={() => setPaymentMethod("COD")} className="w-4 h-4 accent-gold" />
                   <div className="flex items-center gap-3">
