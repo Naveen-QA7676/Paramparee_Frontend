@@ -22,7 +22,7 @@ const Cart = () => {
 
   const { cartItems, loading, updateQuantity, removeFromCart: removeItem, subtotal } = useCart();
 
-  const deliveryCharge = subtotal >= 2999 ? 0 : 99;
+  const deliveryCharge = subtotal >= 2999 ? 0 : 20;
   const totalAmount = subtotal + deliveryCharge;
 
   const handlePlaceOrder = () => {

@@ -30,7 +30,7 @@ const Checkout = () => {
   const cartItems = isDirectBuy ? [directBuyItem] : globalCartItems;
   const subtotal = isDirectBuy ? (directBuyItem.price * directBuyItem.quantity) : globalSubtotal;
 
-  const deliveryCharge = subtotal >= 2999 ? 0 : 99;
+  const deliveryCharge = subtotal >= 2999 ? 0 : 20;
   const total = subtotal + deliveryCharge;
 
   const [formData, setFormData] = useState<Omit<Address, "id" | "_id" | "isDefault">>({
@@ -108,20 +108,35 @@ const Checkout = () => {
     }
   };
 
+  // Build the order item payload from whatever is being checked out.
+  const buildOrderItems = () =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cartItems.map((item: any) => ({
+      productId: item.id,
+      name: item.name,
+      image: item.image || "",
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
   const handleRazorpayPayment = async (selectedAddr: Address) => {
     try {
+      const orderItems = buildOrderItems();
+
+      // Backend creates a pending order in our DB AND a linked Razorpay order,
+      // returning both so the payment can later be verified & saved against it.
       const createRes = await apiClient.post("/payment/create-order", {
-        amount: total,
-        receipt: `receipt_${Date.now()}`,
+        items: orderItems,
+        shippingAddress: selectedAddr,
       });
       console.log("[razorpay] /payment/create-order response:", createRes.data);
 
-      // Be tolerant of the backend response shape: the order may sit at the top
-      // level or be nested under `data`, and the id may be `id` or `order_id`.
-      const rzpOrder = createRes.data?.data ?? createRes.data ?? {};
+      const data = createRes.data?.data ?? createRes.data ?? {};
+      const rzpOrder = data.razorpayOrder ?? data;
       const orderId = rzpOrder.id ?? rzpOrder.order_id;
       const amount = rzpOrder.amount ?? total * 100;
       const currency = rzpOrder.currency ?? "INR";
+      const key = data.keyId ?? import.meta.env.VITE_RAZORPAY_KEY;
 
       // Without a valid order_id Razorpay opens in "no-order" mode and the success
       // response comes back WITHOUT razorpay_order_id / razorpay_signature, so the
@@ -133,7 +148,7 @@ const Checkout = () => {
       }
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY,
+        key,
         amount,
         currency,
         name: "Parampare",
@@ -150,7 +165,8 @@ const Checkout = () => {
             return;
           }
 
-          // Step 1 — verify the signature on the backend (this is what saves the payment).
+          // Verify the signature on the backend — this fetches the real payment
+          // status from Razorpay and saves it against the order we created above.
           let verifyRes;
           try {
             verifyRes = await apiClient.post("/payment/verify", {
@@ -168,16 +184,12 @@ const Checkout = () => {
               description: e.response?.data?.message || "We could not verify your payment. If money was deducted it will be refunded. Please contact support.",
               variant: "destructive",
             });
-            return; // do NOT place the order if verification failed
+            return; // order stays in 'Payment Pending' on the backend
           }
 
-          // Step 2 — verification passed; create the order record.
-          try {
-            await completeOrder(selectedAddr, "Online");
-          } catch (err) {
-            console.error("[razorpay] order placement failed after successful verify:", err);
-            toast({ title: "Order Failed", description: "Payment verified but order creation failed. Please contact support with your payment ID.", variant: "destructive" });
-          }
+          // Verified — the order is already saved; just finish the UI flow.
+          const savedOrder = verifyRes.data?.data ?? {};
+          finalizeOrderUI(savedOrder, orderItems, selectedAddr, "Online");
         },
         prefill: {
           name: selectedAddr.fullName,
@@ -206,22 +218,20 @@ const Checkout = () => {
     }
   };
 
-  const completeOrder = async (selectedAddr: Address, method: "Online" | "COD") => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orderItems = cartItems.map((item: any) => ({
-      productId: item.id,
-      name: item.name,
-      image: item.image || "",
-      quantity: item.quantity,
-      price: item.price,
-    }));
-
+  // COD path — create the order directly, then finish the UI flow.
+  const completeCodOrder = async (selectedAddr: Address) => {
+    const orderItems = buildOrderItems();
     const res = await apiClient.post("/orders", {
       items: orderItems,
       shippingAddress: selectedAddr,
-      paymentMethod: method === "Online" ? "Online Payment" : "Cash on Delivery",
+      paymentMethod: "Cash on Delivery",
     });
+    finalizeOrderUI(res.data.data || res.data, orderItems, selectedAddr, "COD");
+  };
 
+  // Shared post-order UI: clear cart, persist locally, sync sheets, navigate.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const finalizeOrderUI = (orderData: any, orderItems: any[], selectedAddr: Address, method: "Online" | "COD") => {
     if (!isDirectBuy) {
       localStorage.removeItem("cart");
       window.dispatchEvent(new Event("cartUpdated"));
@@ -229,7 +239,6 @@ const Checkout = () => {
       sessionStorage.removeItem("directBuyItem");
     }
 
-    const orderData = res.data.data || res.data;
     const finalOrder = {
       id: orderData.orderId || orderData._id || orderData.id,
       items: orderItems,
@@ -311,7 +320,7 @@ const Checkout = () => {
       await handleRazorpayPayment(selectedAddr);
     } else {
       try {
-        await completeOrder(selectedAddr, "COD");
+        await completeCodOrder(selectedAddr);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error("Place order failed:", err);
