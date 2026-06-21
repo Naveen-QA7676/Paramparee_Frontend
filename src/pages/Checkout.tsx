@@ -123,20 +123,47 @@ const Checkout = () => {
     try {
       const orderItems = buildOrderItems();
 
-      // Backend creates a pending order in our DB AND a linked Razorpay order,
-      // returning both so the payment can later be verified & saved against it.
-      const createRes = await apiClient.post("/payment/create-order", {
+      // Step 1 — create the pending DB order FIRST. The backend's create-order
+      // links a Razorpay order to this DB order, so the payment can later be
+      // verified & saved against it. Cart stays intact (paymentMethod is Online).
+      const orderRes = await apiClient.post("/orders", {
         items: orderItems,
         shippingAddress: selectedAddr,
+        paymentMethod: "Online Payment",
       });
-      console.log("[razorpay] /payment/create-order response:", createRes.data);
+      const dbOrder = orderRes.data?.data ?? orderRes.data ?? {};
+      const dbOrderId = dbOrder._id ?? dbOrder.id;
+      if (!dbOrderId) {
+        console.error("[razorpay] POST /orders returned no _id:", orderRes.data);
+        toast({ title: "Payment Error", description: "Could not create order. Please try again.", variant: "destructive" });
+        return;
+      }
+      console.log("[razorpay] DB order created:", dbOrderId);
+
+      // Step 2 — ask the backend to create a Razorpay order for that DB order.
+      let createRes;
+      try {
+        createRes = await apiClient.post("/payment/create-order", { orderId: dbOrderId });
+        console.log("[razorpay] /payment/create-order response:", createRes.data);
+      } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const e = err as any;
+        const serverMsg = e.response?.data?.message;
+        console.error("[razorpay] /payment/create-order FAILED:", e.response?.status, e.response?.data || e.message);
+        toast({
+          title: "Payment Error",
+          description: serverMsg ? `Could not start payment: ${serverMsg}` : "Could not start payment. Please try again or use COD.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const data = createRes.data?.data ?? createRes.data ?? {};
       const rzpOrder = data.razorpayOrder ?? data;
       const orderId = rzpOrder.id ?? rzpOrder.order_id;
       const amount = rzpOrder.amount ?? total * 100;
       const currency = rzpOrder.currency ?? "INR";
-      const key = data.keyId ?? import.meta.env.VITE_RAZORPAY_KEY;
+      const key = data.key ?? import.meta.env.VITE_RAZORPAY_KEY;
 
       // Without a valid order_id Razorpay opens in "no-order" mode and the success
       // response comes back WITHOUT razorpay_order_id / razorpay_signature, so the
