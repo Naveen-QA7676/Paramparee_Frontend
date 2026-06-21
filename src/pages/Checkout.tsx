@@ -110,21 +110,45 @@ const Checkout = () => {
 
   const handleRazorpayPayment = async (selectedAddr: Address) => {
     try {
-      const { data: { data: rzpOrder } } = await apiClient.post("/payment/create-order", {
+      const createRes = await apiClient.post("/payment/create-order", {
         amount: total,
-        receipt: `receipt_${Date.now()}`
+        receipt: `receipt_${Date.now()}`,
       });
+      console.log("[razorpay] /payment/create-order response:", createRes.data);
+
+      // Be tolerant of the backend response shape: the order may sit at the top
+      // level or be nested under `data`, and the id may be `id` or `order_id`.
+      const rzpOrder = createRes.data?.data ?? createRes.data ?? {};
+      const orderId = rzpOrder.id ?? rzpOrder.order_id;
+      const amount = rzpOrder.amount ?? total * 100;
+      const currency = rzpOrder.currency ?? "INR";
+
+      // Without a valid order_id Razorpay opens in "no-order" mode and the success
+      // response comes back WITHOUT razorpay_order_id / razorpay_signature, so the
+      // backend can never verify or save the payment. Fail loudly instead.
+      if (!orderId) {
+        console.error("[razorpay] create-order returned no order id:", createRes.data);
+        toast({ title: "Payment Error", description: "Could not start payment (no order id from server). Please try again or use COD.", variant: "destructive" });
+        return;
+      }
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY,
-        amount: rzpOrder.amount,
-        currency: rzpOrder.currency,
+        amount,
+        currency,
         name: "Parampare",
         description: "Authentic Ilkal Sarees",
-        order_id: rzpOrder.id,
+        order_id: orderId,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         handler: async (response: any) => {
           console.log("[razorpay] handler fired. payment response:", response);
+
+          // Guard: if any field is missing, verification will fail server-side.
+          if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) {
+            console.error("[razorpay] success response missing fields — order_id was likely not passed to Checkout:", response);
+            toast({ title: "Payment Verification Failed", description: "Payment succeeded but returned incomplete data. Please contact support with your payment ID.", variant: "destructive" });
+            return;
+          }
 
           // Step 1 — verify the signature on the backend (this is what saves the payment).
           let verifyRes;
