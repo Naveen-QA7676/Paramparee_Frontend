@@ -124,16 +124,35 @@ const Checkout = () => {
         order_id: rzpOrder.id,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         handler: async (response: any) => {
+          console.log("[razorpay] handler fired. payment response:", response);
+
+          // Step 1 — verify the signature on the backend (this is what saves the payment).
+          let verifyRes;
           try {
-            await apiClient.post("/payment/verify", {
+            verifyRes = await apiClient.post("/payment/verify", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
+              razorpay_signature: response.razorpay_signature,
             });
+            console.log("[razorpay] /payment/verify OK:", verifyRes.status, verifyRes.data);
+          } catch (err) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const e = err as any;
+            console.error("[razorpay] /payment/verify FAILED:", e.response?.status, e.response?.data || e.message);
+            toast({
+              title: "Payment Verification Failed",
+              description: e.response?.data?.message || "We could not verify your payment. If money was deducted it will be refunded. Please contact support.",
+              variant: "destructive",
+            });
+            return; // do NOT place the order if verification failed
+          }
+
+          // Step 2 — verification passed; create the order record.
+          try {
             await completeOrder(selectedAddr, "Online");
           } catch (err) {
-            console.error("Payment verification or order placement failed:", err);
-            toast({ title: "Order Failed", description: "Payment verified but order creation failed. Please contact support.", variant: "destructive" });
+            console.error("[razorpay] order placement failed after successful verify:", err);
+            toast({ title: "Order Failed", description: "Payment verified but order creation failed. Please contact support with your payment ID.", variant: "destructive" });
           }
         },
         prefill: {
