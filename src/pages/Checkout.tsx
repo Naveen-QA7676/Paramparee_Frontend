@@ -108,142 +108,52 @@ const Checkout = () => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buildOrderItems = () => cartItems.map((item: any) => ({
-    productId: item.id,
-    name: item.name,
-    image: item.image || "",
-    quantity: item.quantity,
-    price: item.price,
-  }));
-
-  // Creates the DB order only. No cart clear, no navigation. Returns the order doc.
-  const createDbOrder = async (selectedAddr: Address, method: "Online" | "COD") => {
-    const orderItems = buildOrderItems();
-    const res = await apiClient.post("/orders", {
-      items: orderItems,
-      shippingAddress: selectedAddr,
-      paymentMethod: method === "Online" ? "Online Payment" : "Cash on Delivery",
-    });
-    const orderData = res.data?.data || res.data;
-    return { orderData, orderItems };
-  };
-
-  // Post-order UX: clear cart, save locally, sync sheets, navigate to confirmation.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const finishOrderUx = (orderData: any, orderItems: any[], selectedAddr: Address, method: "Online" | "COD") => {
-    if (!isDirectBuy) {
-      localStorage.removeItem("cart");
-      window.dispatchEvent(new Event("cartUpdated"));
-    } else {
-      sessionStorage.removeItem("directBuyItem");
-    }
-
-    const finalOrder = {
-      id: orderData.orderId || orderData._id || orderData.id,
-      items: orderItems,
-      address: selectedAddr,
-      date: new Date().toISOString(),
-      status: "Order Confirmed",
-      paymentMethod: method === "Online" ? "Online Payment" : "Cash on Delivery",
-      total: total,
-      subtotal: subtotal,
-      deliveryCharge: deliveryCharge,
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    };
-
-    sessionStorage.setItem("lastOrderId", finalOrder.id);
-
-    try {
-      const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      localStorage.setItem("orders", JSON.stringify([finalOrder, ...existingOrders]));
-    } catch (e) {
-      console.warn("Failed saving order to local storage", e);
-    }
-
-    const googleSheetsUrl = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK_URL;
-    if (googleSheetsUrl) {
-      try {
-        const sheetData = {
-          orderId: finalOrder.id,
-          date: finalOrder.date,
-          status: finalOrder.status,
-          paymentMethod: finalOrder.paymentMethod,
-          total: finalOrder.total,
-          fullName: finalOrder.address.fullName,
-          mobile: finalOrder.address.mobile,
-          address: `${finalOrder.address.house}, ${finalOrder.address.street}, ${finalOrder.address.city}, ${finalOrder.address.state} - ${finalOrder.address.pincode}`,
-          items: finalOrder.items.map(item => `${item.name} (x${item.quantity})`).join(" | "),
-        };
-        console.log("SENDING TO GOOGLE SHEETS FOR TEST:", sheetData);
-        fetch(googleSheetsUrl, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sheetData)
-        }).catch(err => console.error("Failed silently to sync to Google Sheets:", err));
-      } catch (err) {
-        console.error("Google Sheets sync error:", err);
-      }
-    }
-
-    navigate("/order-confirmation", {
-      state: { orderId: finalOrder.id, order: finalOrder },
-      replace: true,
-    });
-  };
-
   const handleRazorpayPayment = async (selectedAddr: Address) => {
     try {
-      // Step 1 — create the DB order FIRST. Cart stays intact server-side
-      // because paymentMethod is 'Online Payment'.
-      const { orderData, orderItems } = await createDbOrder(selectedAddr, "Online");
-      const dbOrderId = orderData?._id || orderData?.id;
-      if (!dbOrderId) {
-        console.error("[razorpay] DB order creation returned no _id:", orderData);
-        toast({ title: "Payment Error", description: "Could not create order. Please try again.", variant: "destructive" });
-        return;
-      }
-      console.log("[razorpay] DB order created:", dbOrderId);
-
-      // Step 2 — ask the backend to create a Razorpay order linked to that DB order.
-      const createRes = await apiClient.post("/payment/create-order", { orderId: dbOrderId });
+      const createRes = await apiClient.post("/payment/create-order", {
+        amount: total,
+        receipt: `receipt_${Date.now()}`,
+      });
       console.log("[razorpay] /payment/create-order response:", createRes.data);
 
-      const data = createRes.data?.data || {};
-      const rzpOrder = data.razorpayOrder || {};
-      const razorpayOrderId = rzpOrder.id;
+      // Be tolerant of the backend response shape: the order may sit at the top
+      // level or be nested under `data`, and the id may be `id` or `order_id`.
+      const rzpOrder = createRes.data?.data ?? createRes.data ?? {};
+      const orderId = rzpOrder.id ?? rzpOrder.order_id;
       const amount = rzpOrder.amount ?? total * 100;
-      const currency = rzpOrder.currency ?? data.currency ?? "INR";
-      const key = data.key || import.meta.env.VITE_RAZORPAY_KEY;
+      const currency = rzpOrder.currency ?? "INR";
 
-      if (!razorpayOrderId) {
-        console.error("[razorpay] create-order returned no razorpay order id:", createRes.data);
+      // Without a valid order_id Razorpay opens in "no-order" mode and the success
+      // response comes back WITHOUT razorpay_order_id / razorpay_signature, so the
+      // backend can never verify or save the payment. Fail loudly instead.
+      if (!orderId) {
+        console.error("[razorpay] create-order returned no order id:", createRes.data);
         toast({ title: "Payment Error", description: "Could not start payment (no order id from server). Please try again or use COD.", variant: "destructive" });
         return;
       }
 
       const options = {
-        key,
+        key: import.meta.env.VITE_RAZORPAY_KEY,
         amount,
         currency,
         name: "Parampare",
         description: "Authentic Ilkal Sarees",
-        order_id: razorpayOrderId,
+        order_id: orderId,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         handler: async (response: any) => {
           console.log("[razorpay] handler fired. payment response:", response);
 
+          // Guard: if any field is missing, verification will fail server-side.
           if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) {
-            console.error("[razorpay] success response missing fields:", response);
+            console.error("[razorpay] success response missing fields — order_id was likely not passed to Checkout:", response);
             toast({ title: "Payment Verification Failed", description: "Payment succeeded but returned incomplete data. Please contact support with your payment ID.", variant: "destructive" });
             return;
           }
 
-          // Step 3 — verify on the backend. This flips paymentStatus to 'Paid'
-          // and persists razorpayPayment/razorpayPaymentResponse/razorpayPaymentId.
+          // Step 1 — verify the signature on the backend (this is what saves the payment).
+          let verifyRes;
           try {
-            const verifyRes = await apiClient.post("/payment/verify", {
+            verifyRes = await apiClient.post("/payment/verify", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -258,12 +168,16 @@ const Checkout = () => {
               description: e.response?.data?.message || "We could not verify your payment. If money was deducted it will be refunded. Please contact support.",
               variant: "destructive",
             });
-            return;
+            return; // do NOT place the order if verification failed
           }
 
-          // Step 4 — verification done, run the post-order UX (cart clear, nav).
-          // The DB order already exists from step 1 — do NOT create a new one.
-          finishOrderUx(orderData, orderItems, selectedAddr, "Online");
+          // Step 2 — verification passed; create the order record.
+          try {
+            await completeOrder(selectedAddr, "Online");
+          } catch (err) {
+            console.error("[razorpay] order placement failed after successful verify:", err);
+            toast({ title: "Order Failed", description: "Payment verified but order creation failed. Please contact support with your payment ID.", variant: "destructive" });
+          }
         },
         prefill: {
           name: selectedAddr.fullName,
@@ -293,8 +207,86 @@ const Checkout = () => {
   };
 
   const completeOrder = async (selectedAddr: Address, method: "Online" | "COD") => {
-    const { orderData, orderItems } = await createDbOrder(selectedAddr, method);
-    finishOrderUx(orderData, orderItems, selectedAddr, method);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orderItems = cartItems.map((item: any) => ({
+      productId: item.id,
+      name: item.name,
+      image: item.image || "",
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
+    const res = await apiClient.post("/orders", {
+      items: orderItems,
+      shippingAddress: selectedAddr,
+      paymentMethod: method === "Online" ? "Online Payment" : "Cash on Delivery",
+    });
+
+    if (!isDirectBuy) {
+      localStorage.removeItem("cart");
+      window.dispatchEvent(new Event("cartUpdated"));
+    } else {
+      sessionStorage.removeItem("directBuyItem");
+    }
+
+    const orderData = res.data.data || res.data;
+    const finalOrder = {
+      id: orderData.orderId || orderData._id || orderData.id,
+      items: orderItems,
+      address: selectedAddr,
+      date: new Date().toISOString(),
+      status: "Order Confirmed",
+      paymentMethod: method === "Online" ? "Online Payment" : "Cash on Delivery",
+      total: total,
+      subtotal: subtotal,
+      deliveryCharge: deliveryCharge,
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    sessionStorage.setItem("lastOrderId", finalOrder.id);
+    
+    // Fallback: Save to local storage so OrderDetail can retrieve it even if backend API dies or page is refreshed
+    try {
+      const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      localStorage.setItem("orders", JSON.stringify([finalOrder, ...existingOrders]));
+    } catch (e) {
+      console.warn("Failed saving order to local storage", e);
+    }
+
+    // Background sync to Google Sheets
+    const googleSheetsUrl = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK_URL;
+    if (googleSheetsUrl) {
+      try {
+        const sheetData = {
+          orderId: finalOrder.id,
+          date: finalOrder.date,
+          status: finalOrder.status,
+          paymentMethod: finalOrder.paymentMethod,
+          total: finalOrder.total,
+          fullName: finalOrder.address.fullName,
+          mobile: finalOrder.address.mobile,
+          address: `${finalOrder.address.house}, ${finalOrder.address.street}, ${finalOrder.address.city}, ${finalOrder.address.state} - ${finalOrder.address.pincode}`,
+          items: finalOrder.items.map(item => `${item.name} (x${item.quantity})`).join(" | "),
+        };
+
+        // Added test log for local debugging
+        console.log("SENDING TO GOOGLE SHEETS FOR TEST:", sheetData);
+
+        fetch(googleSheetsUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sheetData)
+        }).catch(err => console.error("Failed silently to sync to Google Sheets:", err));
+      } catch (err) {
+        console.error("Google Sheets sync error:", err);
+      }
+    }
+
+    navigate("/order-confirmation", {
+      state: { orderId: finalOrder.id, order: finalOrder },
+      replace: true
+    });
   };
 
   const handlePlaceOrder = async () => {
