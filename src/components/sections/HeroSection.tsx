@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
+import { Magnetic } from "@/components/ui/magnetic";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import heroBanner from "@/assets/hero-banner.jpg";
-import heroVideo from "@/assets/hero-video.mp4";
 import { useState } from "react";
+
+const heroBanner = "/assets/hero-banner.jpg";
+const heroVideo = "/assets/hero-video.mp4";
 
 const HeroSection = () => {
   const [videoError, setVideoError] = useState(false);
@@ -77,17 +79,19 @@ const HeroSection = () => {
             className="flex flex-wrap gap-4 pt-4 opacity-0 animate-fade-in-up" 
             style={{ animationDelay: "0.8s" }}
           >
-            <Link to="/products">
-              <Button 
-                size="lg" 
-                className="font-body font-medium tracking-wide rounded-full px-8 py-6 bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 hover:shadow-elevated group"
-              >
-                <span className="flex items-center gap-2">
-                  Shop Collection
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </span>
-              </Button>
-            </Link>
+            <Magnetic strength={0.45}>
+              <Link to="/products">
+                <Button
+                  size="lg"
+                  className="font-body font-medium tracking-wide rounded-full px-8 py-6 bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 hover:shadow-elevated group"
+                >
+                  <span className="flex items-center gap-2">
+                    Shop Collection
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </Button>
+              </Link>
+            </Magnetic>
           </div>
 
           {/* Trust Badges */}

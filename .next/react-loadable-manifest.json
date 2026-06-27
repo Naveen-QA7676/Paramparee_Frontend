@@ -1,0 +1,194 @@
+{
+  "pages\\[[...slug]].tsx -> ../src/App": {
+    "id": "pages\\[[...slug]].tsx -> ../src/App",
+    "files": [
+      "static/chunks/src_App_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./components/Chatbot": {
+    "id": "src\\App.tsx -> ./components/Chatbot",
+    "files": [
+      "static/chunks/src_components_Chatbot_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./components/WhatsAppButton": {
+    "id": "src\\App.tsx -> ./components/WhatsAppButton",
+    "files": [
+      "static/chunks/src_components_WhatsAppButton_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/Cart": {
+    "id": "src\\App.tsx -> ./pages/Cart",
+    "files": [
+      "static/chunks/src_pages_Cart_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/CategoryPage": {
+    "id": "src\\App.tsx -> ./pages/CategoryPage",
+    "files": [
+      "static/chunks/src_pages_CategoryPage_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/Checkout": {
+    "id": "src\\App.tsx -> ./pages/Checkout",
+    "files": [
+      "static/chunks/src_pages_Checkout_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/ContactUs": {
+    "id": "src\\App.tsx -> ./pages/ContactUs",
+    "files": [
+      "static/chunks/src_pages_ContactUs_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/CookiePolicy": {
+    "id": "src\\App.tsx -> ./pages/CookiePolicy",
+    "files": [
+      "static/chunks/src_pages_CookiePolicy_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/FAQs": {
+    "id": "src\\App.tsx -> ./pages/FAQs",
+    "files": [
+      "static/chunks/src_pages_FAQs_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/ForgotPassword": {
+    "id": "src\\App.tsx -> ./pages/ForgotPassword",
+    "files": [
+      "static/chunks/src_pages_ForgotPassword_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/IlkalSarees": {
+    "id": "src\\App.tsx -> ./pages/IlkalSarees",
+    "files": [
+      "static/chunks/src_pages_IlkalSarees_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/Login": {
+    "id": "src\\App.tsx -> ./pages/Login",
+    "files": [
+      "static/chunks/src_pages_Login_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/MyOrders": {
+    "id": "src\\App.tsx -> ./pages/MyOrders",
+    "files": [
+      "static/chunks/src_pages_MyOrders_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/OrderConfirmation": {
+    "id": "src\\App.tsx -> ./pages/OrderConfirmation",
+    "files": [
+      "static/chunks/src_pages_OrderConfirmation_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/OrderDetail": {
+    "id": "src\\App.tsx -> ./pages/OrderDetail",
+    "files": [
+      "static/chunks/src_pages_OrderDetail_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/OurStory": {
+    "id": "src\\App.tsx -> ./pages/OurStory",
+    "files": [
+      "static/chunks/src_pages_OurStory_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/PrivacyPolicy": {
+    "id": "src\\App.tsx -> ./pages/PrivacyPolicy",
+    "files": [
+      "static/chunks/src_pages_PrivacyPolicy_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/ProductDetail": {
+    "id": "src\\App.tsx -> ./pages/ProductDetail",
+    "files": [
+      "static/chunks/src_pages_ProductDetail_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/Products": {
+    "id": "src\\App.tsx -> ./pages/Products",
+    "files": [
+      "static/chunks/src_pages_Products_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/RefundPolicy": {
+    "id": "src\\App.tsx -> ./pages/RefundPolicy",
+    "files": [
+      "static/chunks/src_pages_RefundPolicy_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/Register": {
+    "id": "src\\App.tsx -> ./pages/Register",
+    "files": [
+      "static/chunks/src_pages_Register_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/ResetPassword": {
+    "id": "src\\App.tsx -> ./pages/ResetPassword",
+    "files": [
+      "static/chunks/src_pages_ResetPassword_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/ReturnsExchange": {
+    "id": "src\\App.tsx -> ./pages/ReturnsExchange",
+    "files": [
+      "static/chunks/src_pages_ReturnsExchange_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/ShippingDelivery": {
+    "id": "src\\App.tsx -> ./pages/ShippingDelivery",
+    "files": [
+      "static/chunks/src_pages_ShippingDelivery_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/Sustainability": {
+    "id": "src\\App.tsx -> ./pages/Sustainability",
+    "files": [
+      "static/chunks/src_pages_Sustainability_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/SwitchAccount": {
+    "id": "src\\App.tsx -> ./pages/SwitchAccount",
+    "files": [
+      "static/chunks/src_pages_SwitchAccount_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/TermsOfUse": {
+    "id": "src\\App.tsx -> ./pages/TermsOfUse",
+    "files": [
+      "static/chunks/src_pages_TermsOfUse_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/TheArtisans": {
+    "id": "src\\App.tsx -> ./pages/TheArtisans",
+    "files": [
+      "static/chunks/src_pages_TheArtisans_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/VerifyOTP": {
+    "id": "src\\App.tsx -> ./pages/VerifyOTP",
+    "files": [
+      "static/chunks/src_pages_VerifyOTP_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/Wishlist": {
+    "id": "src\\App.tsx -> ./pages/Wishlist",
+    "files": [
+      "static/chunks/src_pages_Wishlist_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/YourAccount": {
+    "id": "src\\App.tsx -> ./pages/YourAccount",
+    "files": [
+      "static/chunks/src_pages_YourAccount_tsx.js"
+    ]
+  },
+  "src\\App.tsx -> ./pages/YourAddresses": {
+    "id": "src\\App.tsx -> ./pages/YourAddresses",
+    "files": [
+      "static/chunks/src_pages_YourAddresses_tsx.js"
+    ]
+  }
+}

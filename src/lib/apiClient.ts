@@ -1,14 +1,15 @@
 import axios from 'axios';
 
-// Use relative URL so Vite proxy handles it (avoids CORS in dev)
-// In production, set VITE_API_URL env var and the proxy isn't needed
-const VITE_API_URL = import.meta.env.VITE_API_URL;
-const API_BASE = import.meta.env.DEV 
-  ? '/api' 
-  : (VITE_API_URL ? `${VITE_API_URL.replace(/\/$/, '')}/api` : '/api');
+// Use relative URL so the Next.js rewrite handles it in dev (avoids CORS).
+// In production, set NEXT_PUBLIC_API_URL and requests go straight to the API.
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const isDev = process.env.NODE_ENV !== 'production';
+const API_BASE = isDev
+  ? '/api'
+  : (API_URL ? `${API_URL.replace(/\/$/, '')}/api` : '/api');
 
-if (import.meta.env.DEV) {
-  console.log('Vite Proxy Enabled. API_BASE:', API_BASE);
+if (isDev) {
+  console.log('Next.js rewrite enabled. API_BASE:', API_BASE);
 }
 
 const apiClient = axios.create({

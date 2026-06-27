@@ -34,5 +34,23 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    build: {
+      // Split heavy third-party libraries into long-cacheable vendor chunks so
+      // the main app bundle stays small and browser caching is more effective.
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            "react-vendor": ["react", "react-dom", "react-router-dom"],
+            "data-vendor": ["@tanstack/react-query", "axios", "@reduxjs/toolkit", "react-redux"],
+            "motion-vendor": ["framer-motion"],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1000,
+    },
+    // Pre-bundle the hottest deps for faster cold dev startup.
+    optimizeDeps: {
+      include: ["react", "react-dom", "react-router-dom", "framer-motion"],
+    },
   };
 });

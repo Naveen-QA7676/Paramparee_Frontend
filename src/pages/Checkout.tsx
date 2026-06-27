@@ -163,7 +163,7 @@ const Checkout = () => {
       const orderId = rzpOrder.id ?? rzpOrder.order_id;
       const amount = rzpOrder.amount ?? total * 100;
       const currency = rzpOrder.currency ?? "INR";
-      const key = data.key ?? import.meta.env.VITE_RAZORPAY_KEY;
+      const key = data.key ?? process.env.NEXT_PUBLIC_RAZORPAY_KEY;
 
       // Without a valid order_id Razorpay opens in "no-order" mode and the success
       // response comes back WITHOUT razorpay_order_id / razorpay_signature, so the
@@ -290,7 +290,7 @@ const Checkout = () => {
     }
 
     // Background sync to Google Sheets
-    const googleSheetsUrl = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK_URL;
+    const googleSheetsUrl = process.env.NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL;
     if (googleSheetsUrl) {
       try {
         const sheetData = {

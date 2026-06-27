@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Heart, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TiltCard } from "@/components/ui/tilt-card";
 import { Product } from "@/lib/api";
 import { useWishlist } from "@/hooks/useWishlist";
 
@@ -51,7 +52,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <div className="group bg-card rounded-xl overflow-hidden border border-border/50 shadow-soft hover:shadow-elevated transition-all duration-300">
+    <TiltCard className="group relative bg-card rounded-xl overflow-hidden border border-border/50 shadow-soft hover:shadow-elevated transition-shadow duration-300">
       {/* Product Image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
         <Link to={`/product/${product.id}`}>
@@ -123,7 +124,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
       </div>
-    </div>
+    </TiltCard>
   );
 };
 

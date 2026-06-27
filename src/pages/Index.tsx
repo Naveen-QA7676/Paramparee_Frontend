@@ -11,6 +11,7 @@ import Testimonials from "@/components/sections/Testimonials";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/layout/BackToTop";
 import PromotionalBanner from "@/components/sections/PromotionalBanner";
+import Reveal from "@/components/ui/reveal";
 
 const Index = () => {
   return (
@@ -20,14 +21,14 @@ const Index = () => {
       <main className="flex flex-col pb-20">
         <HeroSection />
         <div className="flex flex-col gap-20 md:gap-32 mt-16 md:mt-24">
-          <CircleCategories />
-          <ShaadiWardrobe />
-          <Bestsellers />
-          <PromotionalBanner />
-          <EthnicEnsemble />
-          <CuratedCollection />
-          <WhyChooseUs />
-          <Testimonials />
+          <Reveal><CircleCategories /></Reveal>
+          <Reveal><ShaadiWardrobe /></Reveal>
+          <Reveal><Bestsellers /></Reveal>
+          <Reveal><PromotionalBanner /></Reveal>
+          <Reveal><EthnicEnsemble /></Reveal>
+          <Reveal><CuratedCollection /></Reveal>
+          <Reveal><WhyChooseUs /></Reveal>
+          <Reveal><Testimonials /></Reveal>
         </div>
       </main>
       <Footer />

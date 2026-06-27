@@ -1,11 +1,9 @@
 import { Heart, ShoppingBag, Eye, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { Magnetic } from "@/components/ui/magnetic";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import saree1 from "@/assets/saree-1.jpg";
-import saree2 from "@/assets/saree-2.jpg";
-import saree3 from "@/assets/saree-3.jpg";
-import saree4 from "@/assets/saree-4.jpg";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
@@ -156,7 +154,7 @@ const Bestsellers = () => {
                   onMouseEnter={() => setHoveredId(product.id)}
                   onMouseLeave={() => setHoveredId(null)}
                 >
-                  <div className="relative overflow-hidden rounded-2xl bg-secondary mb-4 card-hover shadow-soft hover:shadow-elevated transition-shadow duration-300">
+                  <TiltCard className="relative overflow-hidden rounded-2xl bg-secondary mb-4 card-hover shadow-soft hover:shadow-elevated transition-shadow duration-300">
                     <Link to={`/product/${product.id}`}>
                       <img
                         src={product.image}
@@ -219,7 +217,7 @@ const Bestsellers = () => {
                         Add to Cart
                       </Button>
                     </div>
-                  </div>
+                  </TiltCard>
 
                   <div className="space-y-2">
                     <Link to={`/product/${product.id}`}>
@@ -257,16 +255,18 @@ const Bestsellers = () => {
         </div>
 
         <div className="text-center mt-14 opacity-0 animate-fade-in" style={{ animationDelay: "0.8s" }}>
-          <Link to="/products">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="font-body font-medium tracking-wide rounded-full px-8 border-2 border-foreground/20 hover:bg-foreground hover:text-background transition-all duration-300 group"
-            >
-              View All Bestsellers
-              <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
-            </Button>
-          </Link>
+          <Magnetic>
+            <Link to="/products">
+              <Button
+                variant="outline"
+                size="lg"
+                className="font-body font-medium tracking-wide rounded-full px-8 border-2 border-foreground/20 hover:bg-foreground hover:text-background transition-all duration-300 group"
+              >
+                View All Bestsellers
+                <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+              </Button>
+            </Link>
+          </Magnetic>
         </div>
       </div>
     </section>

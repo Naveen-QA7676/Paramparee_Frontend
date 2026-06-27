@@ -1,7 +1,8 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import bgImage from "@/assets/saree-3.jpg";
+
+const bgImage = "/assets/saree-3.jpg";
 
 const PromotionalBanner = () => {
   return (

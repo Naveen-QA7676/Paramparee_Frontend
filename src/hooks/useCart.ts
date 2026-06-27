@@ -1,146 +1,78 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import apiClient from "@/lib/apiClient";
+import { useEffect, useMemo, useCallback } from "react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  loadCart,
+  addToCart as addToCartThunk,
+  removeFromCart as removeFromCartThunk,
+  updateQuantity as updateQuantityThunk,
+} from "@/store/slices/cartSlice";
 
-export interface CartItem {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-  originalPrice?: number;
-  quantity: number;
-}
+export type { CartItem } from "@/store/slices/cartSlice";
 
-const isLoggedIn = () =>
-  !!(localStorage.getItem("token") && localStorage.getItem("isLoggedIn") === "true");
-
+/**
+ * Backwards-compatible cart hook. The cart now lives in the Redux store, but
+ * this hook preserves the original API (and the cross-component sync via the
+ * `cartUpdated`/`storage`/`loginSuccess` window events) so consumers are
+ * unchanged.
+ */
 export const useCart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadLocal = useCallback(() => {
-    const stored = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCartItems(Array.isArray(stored) ? stored : []);
-  }, []);
-
-  const loadFromApi = useCallback(async () => {
-    if (!isLoggedIn()) {
-      loadLocal();
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await apiClient.get("/cart");
-      const rawItems = res.data.data?.items || res.data.items || [];
-      const items: CartItem[] = rawItems.map((i: any) => ({
-        id: i.product?._id || i.product || i.productId,
-        name: i.product?.name || i.name,
-        image: i.product?.images?.[0] || i.image || "",
-        price: i.product?.price || i.price,
-        originalPrice: i.product?.originalPrice || i.originalPrice,
-        quantity: i.quantity,
-      }));
-      setCartItems(items);
-      localStorage.setItem("cart", JSON.stringify(items));
-    } catch (err) {
-      console.error("Fetch cart failed:", err);
-      loadLocal();
-    } finally {
-      setLoading(false);
-    }
-  }, [loadLocal]);
+  const dispatch = useAppDispatch();
+  const cartItems = useAppSelector((state) => state.cart.items);
+  const loading = useAppSelector((state) => state.cart.loading);
 
   useEffect(() => {
-    loadFromApi();
+    dispatch(loadCart());
 
     const onUpdate = () => {
-      // Small delay to ensure DB has updated before we refetch
-      setTimeout(() => loadFromApi(), 100);
+      // Small delay to ensure DB has updated before we refetch.
+      setTimeout(() => dispatch(loadCart()), 100);
     };
-    
+
     window.addEventListener("cartUpdated", onUpdate);
     window.addEventListener("storage", onUpdate);
     window.addEventListener("loginSuccess", onUpdate);
-    
+
     return () => {
       window.removeEventListener("cartUpdated", onUpdate);
       window.removeEventListener("storage", onUpdate);
       window.removeEventListener("loginSuccess", onUpdate);
     };
-  }, [loadFromApi]);
+  }, [dispatch]);
 
-  const addToCart = useCallback(async (product: any, quantity: number = 1) => {
-    const productId = product.id || product._id;
-    const name = product.name;
-    const image = product.image || (product.images && product.images[0]) || "";
-    const price = product.price;
-    const originalPrice = product.originalPrice;
+  const addToCart = useCallback(
+    async (product: any, quantity: number = 1) => {
+      await dispatch(addToCartThunk({ product, quantity }));
+      return true;
+    },
+    [dispatch]
+  );
 
-    // Optimistically update local first
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const existing = cart.find((i: any) => i.id === productId);
-    if (existing) {
-      existing.quantity = Math.min(existing.quantity + quantity, 5);
-    } else {
-      cart.push({ id: productId, name, image, price, originalPrice, quantity });
-    }
-    localStorage.setItem("cart", JSON.stringify(cart));
-    window.dispatchEvent(new Event("cartUpdated"));
+  const removeFromCart = useCallback(
+    async (productId: string) => {
+      await dispatch(removeFromCartThunk(productId));
+      return true;
+    },
+    [dispatch]
+  );
 
-    if (isLoggedIn()) {
-      try {
-        await apiClient.post("/cart/add", { productId, quantity });
-        return true;
-      } catch (err) {
-        console.error("Add to cart API failed:", err);
-      }
-    }
-    return true;
-  }, []);
+  const updateQuantity = useCallback(
+    async (productId: string, quantity: number) => {
+      if (quantity < 1 || quantity > 5) return false;
+      await dispatch(updateQuantityThunk({ productId, quantity }));
+      return true;
+    },
+    [dispatch]
+  );
 
-  const removeFromCart = useCallback(async (productId: string) => {
-    // Optimistically update local
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const updated = cart.filter((i: any) => i.id !== productId);
-    localStorage.setItem("cart", JSON.stringify(updated));
-    window.dispatchEvent(new Event("cartUpdated"));
-
-    if (isLoggedIn()) {
-      try {
-        await apiClient.delete("/cart/remove", { data: { productId } });
-        return true;
-      } catch (err) {
-        console.error("Remove from cart API failed:", err);
-      }
-    }
-    return true;
-  }, []);
-
-  const updateQuantity = useCallback(async (productId: string, quantity: number) => {
-    if (quantity < 1 || quantity > 5) return false;
-
-    // Optimistically update local
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const item = cart.find((i: any) => i.id === productId);
-    if (item) {
-      item.quantity = quantity;
-      localStorage.setItem("cart", JSON.stringify(cart));
-      window.dispatchEvent(new Event("cartUpdated"));
-    }
-
-    if (isLoggedIn()) {
-      try {
-        await apiClient.put("/cart/update", { productId, quantity });
-        return true;
-      } catch (err) {
-        console.error("Update cart API failed:", err);
-      }
-    }
-    return true;
-  }, []);
+  const refreshCart = useCallback(() => {
+    dispatch(loadCart());
+  }, [dispatch]);
 
   const cartCount = useMemo(() => cartItems.length, [cartItems]);
-  const subtotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItems]);
+  const subtotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cartItems]
+  );
 
   return {
     cartItems,
@@ -150,7 +82,7 @@ export const useCart = () => {
     addToCart,
     removeFromCart,
     updateQuantity,
-    refreshCart: loadFromApi
+    refreshCart,
   };
 };
 

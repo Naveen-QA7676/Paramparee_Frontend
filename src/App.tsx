@@ -3,44 +3,61 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Loader from "./components/layout/Loader";
+import ScrollToTop from "./components/ScrollToTop";
+import ScrollProgress from "./components/ui/scroll-progress";
+
+// Eagerly loaded: landing page + the always-mounted 404 keep first paint instant.
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import VerifyOTP from "./pages/VerifyOTP";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Products from "./pages/Products";
-import ProductDetail from "./pages/ProductDetail";
-import CategoryPage from "./pages/CategoryPage";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import MyOrders from "./pages/MyOrders";
-import OrderDetail from "./pages/OrderDetail";
-import IlkalSarees from "./pages/IlkalSarees";
-import OurStory from "./pages/OurStory";
-import ShippingDelivery from "./pages/ShippingDelivery";
-import ReturnsExchange from "./pages/ReturnsExchange";
-import FAQs from "./pages/FAQs";
-import TheArtisans from "./pages/TheArtisans";
-import Sustainability from "./pages/Sustainability";
-import TermsOfUse from "./pages/TermsOfUse";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import RefundPolicy from "./pages/RefundPolicy";
-import CookiePolicy from "./pages/CookiePolicy";
-import ContactUs from "./pages/ContactUs";
-import Wishlist from "./pages/Wishlist";
-import YourAccount from "./pages/YourAccount";
-import YourAddresses from "./pages/YourAddresses";
-import SwitchAccount from "./pages/SwitchAccount";
-import ScrollToTop from "./components/ScrollToTop";
-import Chatbot from "./components/Chatbot";
-import WhatsAppButton from "./components/WhatsAppButton";
 
-const queryClient = new QueryClient();
+// Route-level code splitting: every other page ships in its own chunk and is
+// only fetched when the user navigates to it, shrinking the initial bundle.
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const VerifyOTP = lazy(() => import("./pages/VerifyOTP"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Products = lazy(() => import("./pages/Products"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
+const OrderDetail = lazy(() => import("./pages/OrderDetail"));
+const IlkalSarees = lazy(() => import("./pages/IlkalSarees"));
+const OurStory = lazy(() => import("./pages/OurStory"));
+const ShippingDelivery = lazy(() => import("./pages/ShippingDelivery"));
+const ReturnsExchange = lazy(() => import("./pages/ReturnsExchange"));
+const FAQs = lazy(() => import("./pages/FAQs"));
+const TheArtisans = lazy(() => import("./pages/TheArtisans"));
+const Sustainability = lazy(() => import("./pages/Sustainability"));
+const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const YourAccount = lazy(() => import("./pages/YourAccount"));
+const YourAddresses = lazy(() => import("./pages/YourAddresses"));
+const SwitchAccount = lazy(() => import("./pages/SwitchAccount"));
+
+// Non-critical, always-mounted widgets: deferred so they never block first paint.
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const WhatsAppButton = lazy(() => import("./components/WhatsAppButton"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 // Component to handle scroll to section on navigation
 const ScrollToSection = () => {
@@ -63,19 +80,34 @@ const ScrollToSection = () => {
   return null;
 };
 
-const App = () => {
-  const [showLoader, setShowLoader] = useState(true);
+// Lightweight fallback shown only while a lazily-loaded route chunk is fetched.
+const RouteFallback = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="h-10 w-10 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
+  </div>
+);
+
+const pageVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        {showLoader && <Loader onComplete={() => setShowLoader(false)} />}
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
-          <ScrollToSection />
-          <Routes>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={pageVariants}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <Suspense fallback={<RouteFallback />}>
+          <Routes location={location}>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -109,8 +141,30 @@ const App = () => {
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <WhatsAppButton />
-          <Chatbot />
+        </Suspense>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+const App = () => {
+  const [showLoader, setShowLoader] = useState(true);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        {showLoader && <Loader onComplete={() => setShowLoader(false)} />}
+        <ScrollProgress />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <ScrollToSection />
+          <AnimatedRoutes />
+          <Suspense fallback={null}>
+            <WhatsAppButton />
+            <Chatbot />
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
