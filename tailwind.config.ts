@@ -147,6 +147,10 @@ export default {
           "0%": { opacity: "0", filter: "blur(10px)" },
           "100%": { opacity: "1", filter: "blur(0)" },
         },
+        "gradient-shift": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -163,6 +167,7 @@ export default {
         "pulse-soft": "pulse-soft 3s ease-in-out infinite",
         "reveal": "reveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "blur-in": "blur-in 0.6s ease-out forwards",
+        "gradient-shift": "gradient-shift 9s ease infinite",
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

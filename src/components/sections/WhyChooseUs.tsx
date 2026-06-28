@@ -1,4 +1,6 @@
 import { Shield, Truck, RefreshCw, Headphones, Sparkles } from "lucide-react";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { TextReveal } from "@/components/ui/text-reveal";
 
 const features = [
   { icon: Shield, title: "Direct from Weaver", description: "Authentic handwoven Ilkal sarees" },
@@ -16,17 +18,24 @@ const WhyChooseUs = () => {
             <Sparkles className="h-4 w-4" />
             Why Parampare
           </span>
-          <h2 className="font-display text-2xl md:text-4xl font-medium text-foreground">The Parampare Promise</h2>
+          <h2 className="font-display text-2xl md:text-4xl font-medium text-foreground">
+            <TextReveal text="The Parampare Promise" />
+          </h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div key={feature.title} className="text-center group opacity-0 animate-fade-in-up" style={{ animationDelay: `${0.1 + index * 0.1}s` }}>
+            <TiltCard
+              key={feature.title}
+              max={16}
+              glare={false}
+              className="relative text-center group rounded-2xl p-4 hover:bg-background/60 transition-colors"
+            >
               <div className="w-14 h-14 mx-auto rounded-full bg-gold/10 flex items-center justify-center mb-4 group-hover:bg-gold/20 transition-colors">
                 <feature.icon className="w-6 h-6 text-gold" strokeWidth={1.5} />
               </div>
               <h3 className="font-body text-sm font-semibold text-foreground mb-1">{feature.title}</h3>
               <p className="text-muted-foreground text-xs font-body">{feature.description}</p>
-            </div>
+            </TiltCard>
           ))}
         </div>
       </div>

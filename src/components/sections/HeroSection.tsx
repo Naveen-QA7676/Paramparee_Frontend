@@ -2,46 +2,72 @@ import { Button } from "@/components/ui/button";
 import { Magnetic } from "@/components/ui/magnetic";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 
 const heroBanner = "/assets/hero-banner.jpg";
 const heroVideo = "/assets/hero-video.mp4";
 
 const HeroSection = () => {
   const [videoError, setVideoError] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLElement>(null);
+
+  // Scroll-driven parallax: background, glass blobs and content move at
+  // different speeds as the hero scrolls away, creating layered 3D depth.
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
+  const blobY = useTransform(scrollYProgress, [0, 1], [0, -140]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, 130]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
+  const bgStyle = reduceMotion ? undefined : { y: bgY };
+  const blobStyle = reduceMotion ? undefined : { y: blobY };
+  const contentStyle = reduceMotion ? undefined : { y: contentY, opacity: contentOpacity };
 
   return (
-    <section className="relative min-h-[70vh] md:min-h-[90vh] overflow-hidden bg-secondary">
+    <section ref={ref} className="relative min-h-[70vh] md:min-h-[90vh] overflow-hidden bg-secondary">
       {/* Background Video with Fallback to Image */}
       {!videoError ? (
-        <video
+        <motion.video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          style={bgStyle}
+          className="absolute inset-0 w-full h-full object-cover scale-110"
           onError={() => setVideoError(true)}
         >
           <source src={heroVideo} type="video/mp4" />
-        </video>
+        </motion.video>
       ) : (
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroBanner})` }}
-        />
+        <motion.div
+          style={bgStyle}
+          className="absolute inset-0 bg-cover bg-center scale-110"
+        >
+          <div className="absolute inset-0" style={{ backgroundImage: `url(${heroBanner})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+        </motion.div>
       )}
-      
+
       {/* Gradient Overlays for text readability */}
       <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
 
-      {/* Modern Decorative Elements - Glassmorphism */}
-      <div className="absolute top-32 right-24 w-64 h-64 bg-gradient-to-br from-gold/20 to-transparent rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-32 right-48 w-48 h-48 bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-2xl animate-float" style={{ animationDelay: "2s" }} />
-      <div className="absolute top-48 left-1/2 w-32 h-32 bg-gold/5 rounded-full blur-2xl animate-pulse-soft" />
+      {/* Living aurora wash — slowly shifting color over the scene */}
+      <div className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-50 bg-[length:200%_200%] animate-gradient-shift bg-gradient-to-br from-gold/40 via-transparent to-maroon/40" />
+
+      {/* Modern Decorative Elements - Glassmorphism (parallax layer) */}
+      <motion.div style={blobStyle} className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-32 right-24 w-64 h-64 bg-gradient-to-br from-gold/20 to-transparent rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-32 right-48 w-48 h-48 bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-2xl animate-float" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-48 left-1/2 w-32 h-32 bg-gold/5 rounded-full blur-2xl animate-pulse-soft" />
+      </motion.div>
 
       {/* Content */}
-      <div className="relative container mx-auto px-4 h-full flex items-center min-h-[70vh] md:min-h-[90vh]">
+      <motion.div style={contentStyle} className="relative container mx-auto px-4 h-full flex items-center min-h-[70vh] md:min-h-[90vh]">
         <div className="max-w-2xl space-y-8 py-16">
           {/* Badge */}
           <div 
@@ -110,7 +136,7 @@ const HeroSection = () => {
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Modern Scroll Indicator */}
       <div className="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-0 animate-fade-in" style={{ animationDelay: "1.2s" }}>

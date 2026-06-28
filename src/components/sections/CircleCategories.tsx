@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategoryTree, getCategoryImageUrl } from "@/lib/api";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { TextReveal } from "@/components/ui/text-reveal";
 
 const CircleCard = ({ category, index }: { category: { name: string; image: string; href: string }; index: number }) => {
   return (
@@ -11,8 +13,11 @@ const CircleCard = ({ category, index }: { category: { name: string; image: stri
       style={{ animationDelay: `${index * 100}ms` }}
     >
       <div className="relative flex flex-col items-center">
-        {/* Circle image - Small and centered */}
-        <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border border-border/50 group-hover:border-gold transition-all duration-500 bg-secondary shadow-sm group-hover:shadow-md">
+        {/* Circle image - Small and centered, with 3D pointer tilt */}
+        <TiltCard
+          max={18}
+          className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border border-border/50 group-hover:border-gold transition-all duration-500 bg-secondary shadow-sm group-hover:shadow-md"
+        >
           <img
             src={category.image}
             alt={category.name}
@@ -20,7 +25,7 @@ const CircleCard = ({ category, index }: { category: { name: string; image: stri
           />
           {/* Subtle overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
-        </div>
+        </TiltCard>
         
         {/* Category Name - Smaller font */}
         <h3 className="mt-2 text-center text-[10px] md:text-xs font-medium text-foreground group-hover:text-gold transition-colors duration-300">
@@ -60,7 +65,7 @@ const CircleCategories = () => {
             Our Collections
           </span>
           <h2 className="text-2xl md:text-4xl font-display font-medium text-foreground text-center">
-            Shop by Category
+            <TextReveal text="Shop by Category" />
           </h2>
         </div>
 
